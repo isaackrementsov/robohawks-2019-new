@@ -49,13 +49,22 @@ public class Only_Driving extends OpMode {
         else if (gamepad1.dpad_down) speed = 2;
         else if (gamepad1.dpad_left) speed = 1;
     */
-        if (Math.abs(gamepad1.right_stick_x) > .2 || Math.abs(gamepad1.left_stick_x) > .2 || Math.abs(gamepad1.right_stick_y) > .2) { //Remember that left motor directions are reversed
+        //if (Math.abs(gamepad1.right_stick_x) > .2 || Math.abs(gamepad1.left_stick_x) > .2 || Math.abs(gamepad1.right_stick_y) > .2) {//Remember that left motor directions are reverse
+
+        if (Math.abs(gamepad1.right_stick_x) > .2 || Math.abs(gamepad1.right_stick_y) > .2) {
             speed = 1;
 
+        /*    * original
             motorRightA.setPower((rightY + rightX + leftX) / 4 * speed);
             motorRightB.setPower((rightY - rightX + leftX) / 4 * speed);
             motorLeftA.setPower((-rightY + rightX + leftX) / 4 * speed); //Opposite (negative) of right because the motors are opposite
             motorLeftB.setPower((-rightY - rightX + leftX) / 4 * speed);
+        */
+
+            motorRightA.setPower((rightY + rightX) / 4 * speed);
+            motorRightB.setPower((rightY - rightX) / 4 * speed);
+            motorLeftA.setPower((-rightY + rightX) / 4 * speed); //Opposite (negative) of right because the motors are opposite
+            motorLeftB.setPower((-rightY - rightX) / 4 * speed);
 
             /*
             To help understand the equation put in positive or negative for the motor speeds and see what the outputs
@@ -65,7 +74,14 @@ public class Only_Driving extends OpMode {
                 -> ->       <- <-       <- ->
                Think about force vectors created by 45° rotation on meccanum wheels to understand strafing
             */
-        } else { //will not move if joysticks are not moving
+        } else if (Math.abs(gamepad1.left_stick_x) > .2){
+
+            motorRightA.setPower((leftX) / 4 * speed);
+            motorRightB.setPower((leftX) / 4 * speed);
+            motorLeftA.setPower((leftX) / 4 * speed); //Opposite (negative) of right because the motors are opposite
+            motorLeftB.setPower((leftX) / 4 * speed);
+
+        }else { //will not move if joysticks are not moving
             motorRightA.setPower(0);
             motorRightB.setPower(0);
             motorLeftA.setPower(0);
