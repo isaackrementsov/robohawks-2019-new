@@ -3,6 +3,7 @@ import com.qualcomm.hardware.motors.RevRoboticsCoreHexMotor;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.Range;
 
@@ -18,7 +19,7 @@ public class LifterBot extends OpMode {
     private int adjustmentForGrabbers = 1; //Change to 2 if using continuous (or 360) servos
     private static final int LIFTER_TICK_COUNTS = 1120; //Tick counts for encoded motors
     private static final int INOUT_TICK_COUNTS = 288;
-    private static final int GRABBER_TICK_COUNTS = 28;
+    private static final int GRABBER_TICK_COUNTS = 420;
     private DcMotor motorRightA;                    // creates motors in code
     private DcMotor motorRightB;
     private DcMotor motorLeftA;
@@ -32,8 +33,9 @@ public class LifterBot extends OpMode {
     //private Servo grabberRight;
     //private Servo grabberLeft;
     private Servo locker;
+    private boolean grabberIsRunning = false;
     public void init() { // initiates and maps motors/servos/sensors
-        motorRightA = hardwareMap.dcMotor.get("mRF");               // Finds the motor and the library to use it
+        motorRightA = hardwareMap.dcMotor.get("mRF");// Finds the motor and the library to use it
         motorRightB = hardwareMap.dcMotor.get("mRB");               // !! Must be prenamed in phone app to green letters (mRF, mRB, etc.) !!
         motorLeftA = hardwareMap.dcMotor.get("mLF");
         motorLeftB = hardwareMap.dcMotor.get("mLB");
@@ -51,7 +53,8 @@ public class LifterBot extends OpMode {
         lifter.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
       //  inOut.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         lifter.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        grabber.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        grabber.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        //grabber.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         //motorRightA.setDirection(DcMotor.Direction.REVERSE);      //think about logic of motors and how you need to reverse two of them
         //motorRightB.setDirection(DcMotor.Direction.REVERSE);
     }
@@ -124,14 +127,27 @@ public class LifterBot extends OpMode {
         float leftTrigger = gamepad2.left_trigger; //Turns on spinner in reverse
         rightY = Range.clip(rightY, -1, 1);
         leftY = Range.clip(leftY, -1, 1);
-        if(Math.abs(leftY) > 0.1){ //Threshold to prevent response to controller bumps
+        telemetry.addData("Current pos", grabber.getCurrentPosition());
+        telemetry.addData("Target pos", grabber.getTargetPosition());
+        telemetry.addData("Is grabber running?", grabberIsRunning);
+        if(Math.abs(grabber.getCurrentPosition() - grabber.getTargetPosition()) > 2) {
+            grabberIsRunning = true;
+        }else if (grabberIsRunning) {
+            grabberIsRunning = false;
+            grabber.setPower(0);
+        }
+        if(Math.abs(gamepad2.left_stick_y) > 0.1){ //Threshold to prevent response to controller bumps
             /*double position2 = Range.clip((leftY + 1)/2, 0.14, 1); //So that position is not negative and between 0 and 1
             double position = Range.clip((-leftY + 1)/2, 0, 0.86); //Opposing servos must have opposite directions
             grabberRight.setPosition((float) position/adjustmentForGrabbers);
             grabberLeft.setPosition((float) position2/adjustmentForGrabbers);*/
-            double position = Range.clip(GRABBER_TICK_COUNTS*leftY, -0.7*GRABBER_TICK_COUNTS, 0.2*GRABBER_TICK_COUNTS); //Opposing servos must have opposite directions
-            grabber.setTargetPosition((int) Math.floor(position));
-            grabber.setPower(0.2);
+            //double position = Range.clip(GRABBER_TICK_COUNTS*leftY, -0.7*GRABBER_TICK_COUNTS, 0.2*GRABBER_TICK_COUNTS); //Opposing servos must have opposite directions
+            grabberIsRunning = true;
+            grabber.setTargetPosition((int) Math.floor(leftY > 0 ? GRABBER_TICK_COUNTS : -GRABBER_TICK_COUNTS));
+            grabber.setPower(0.7);
+            grabber.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        }else{
+            grabber.setPower(0);
         }
         if(rightY > 0.1) {
             inOut.setPower(rightY);
